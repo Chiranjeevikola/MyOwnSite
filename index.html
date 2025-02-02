@@ -3,7 +3,7 @@
     <title>My Own Site</title>
     <style>
         body {
-            background-color: white;
+            background-color: grey;
             height: 100%;
             margin: 0;
             display: flex;
@@ -15,10 +15,19 @@
             color: red;
             font-size: 100px;
             text-align: center;
+            animation: colorChange 2s infinite;
         }
+
+        @keyframes colorChange {
+            0% { color: red; }
+            25% { color: blue; }
+            50% { color: green; }
+            75% { color: yellow; }
+            100% { color: red; }
+        }
+
         p {
-            font-size: 18px;
-	    Color : blue;
+            font-size: 38px;
             font-weight: bold;
             text-align: center;
         }
