@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        #startButton {
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background: #4caf50;  /* Green */
+            color: white;
+            transition: 0.3s;
+        }
+        #startButton:hover {
+            background: #388e3c;
+        }
+        #gameContainer {
+            display: none;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+            display: inline-block;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+            transition: 0.3s;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #easyBtn {
+            background-color: #4caf50;  /* Green */
+            color: white;
+        }
+        #mediumBtn {
+            background-color: #2196f3;  /* Blue */
+            color: white;
+        }
+        #hardBtn {
+            background-color: #f44336;  /* Red */
+            color: white;
+        }
+        #placeBet {
+            background-color: #ff9800;  /* Orange-Green */
+            color: white;
+        }
+        #placeBet:hover {
+            background-color: #f57c00;  /* Darker Orange-Green */
+        }
+        #exitGame {
+            background-color: #f44336;  /* Red */
+            color: white;
+        }
+        #exitGame:hover {
+            background-color: #d32f2f;  /* Darker Red */
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        #gameArea {
+            position: relative;
+            width: 100%;
+            height: 100px;
+            background: #444;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        #ball {
+            width: 30px;
+            height: 30px;
+            background: #2196f3;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            transition: left 0.5s linear;
+        }
+        #status {
+            font-size: 20px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        #balance {
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: none;
+        }
+        #resultMessage {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+        }
+        .loss {
+            color: red;
+        }
+        .win {
+            color: green;
+        }
+        .button-container {
+            display: inline-block;
+        }
+        #difficultyOptions {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Betting Game!</h1>
+    <!-- Start Button positioned at the top -->
+    <button id="startButton">Start Game</button>
+    
+    <!-- Difficulty options will appear after clicking Start Game -->
+    <div id="difficultyOptions">
+        <h2>Select Difficulty</h2>
+        <button id="easyBtn">Easy</button>
+        <button id="mediumBtn">Medium</button>
+        <button id="hardBtn">Hard</button>
+    </div>
+    
+    <div id="gameContainer">
+        <p id="balance">Balance: Rs 1000</p>
+        <h2>Place Your Bet (10 - 100 Rs)</h2>
+        <input type="number" id="betAmount" min="10" max="100" value="10">
+        <div class="button-container">
+            <button id="placeBet" disabled>Place Bet</button>
+            <button id="exitGame" style="display:none;">Exit</button>
+        </div>
+        <div id="gameArea">
+            <div id="ball"></div>
+        </div>
+        <p id="status">Game is ready...</p>
+        <p id="resultMessage"></p>
+    </div>
+    
+    <script>
+        let ballPosition = 0;
+        let interval;
+        let gameRunning = false;
+        let multiplier = 1;
+        let balance = 1000;
+        let gameStarted = false;
+        let gameSpeed = 500;  // Default speed for Medium difficulty
+        
+        const startButton = document.getElementById('startButton');
+        const difficultyOptions = document.getElementById('difficultyOptions');
+        const easyBtn = document.getElementById('easyBtn');
+        const mediumBtn = document.getElementById('mediumBtn');
+        const hardBtn = document.getElementById('hardBtn');
+        const gameContainer = document.getElementById('gameContainer');
+        const placeBetButton = document.getElementById('placeBet');
+        const betAmountInput = document.getElementById('betAmount');
+        const exitGameButton = document.getElementById('exitGame');
+        const ball = document.getElementById('ball');
+        const statusText = document.getElementById('status');
+        const balanceText = document.getElementById('balance');
+        const resultMessage = document.getElementById('resultMessage');
+
+        startButton.addEventListener('click', () => {
+            startButton.style.display = 'none';  // Hide Start button
+            difficultyOptions.style.display = 'block';  // Show difficulty options
+        });
+
+        easyBtn.addEventListener('click', () => setDifficulty('easy'));
+        mediumBtn.addEventListener('click', () => setDifficulty('medium'));
+        hardBtn.addEventListener('click', () => setDifficulty('hard'));
+
+        function setDifficulty(difficulty) {
+            difficultyOptions.style.display = 'none';  // Hide difficulty options
+            gameContainer.style.display = 'block';  // Show game content
+            balanceText.style.display = 'block';  // Show balance
+            placeBetButton.disabled = false;  // Enable the place bet button
+
+            if (difficulty === 'easy') {
+                gameSpeed = 1000;  // Slower speed for easy mode
+            } else if (difficulty === 'hard') {
+                gameSpeed = 300;  // Faster speed for hard mode
+            } else {
+                gameSpeed = 500;  // Default speed for medium mode
+            }
+            
+            gameStarted = true;
+        }
+        
+        placeBetButton.addEventListener('click', () => {
+            if (!gameStarted) {
+                alert('You must click Start Game first!');
+                return;
+            }
+            const betAmount = parseInt(betAmountInput.value);
+            if (isNaN(betAmount) || betAmount < 10 || betAmount > 100 || betAmount > balance) {
+                alert('Invalid bet amount');
+                return;
+            }
+            balance -= betAmount;
+            updateBalance();
+            startGame(betAmount);
+        });
+        
+        exitGameButton.addEventListener('click', () => {
+            if (gameRunning) {
+                clearInterval(interval);
+                const winnings = parseFloat((parseInt(betAmountInput.value) * multiplier).toFixed(2));
+                balance += winnings;
+                displayResultMessage(winnings);
+                updateBalance();
+                resetGame();
+            }
+        });
+        
+        function startGame(bet) {
+            gameRunning = true;
+            ballPosition = 0;
+            multiplier = 1;
+            statusText.innerText = 'Game is running...';
+            exitGameButton.style.display = 'inline';
+            ball.style.left = '10px';
+            
+            interval = setInterval(() => {
+                if (Math.random() < 0.1) {
+                    clearInterval(interval);
+                    gameRunning = false;
+                    displayResultMessage(-bet);
+                    setTimeout(resetGame, 2000);
+                    return;
+                }
+                ballPosition += 5;
+                multiplier += 0.1;
+                ball.style.left = `${ballPosition}px`;
+                statusText.innerText = `Multiplier: ${multiplier.toFixed(2)}x`;
+            }, gameSpeed);  // Use the speed based on difficulty
+        }
+        
+        function resetGame() {
+            statusText.innerText = 'Game is ready...';
+            exitGameButton.style.display = 'none';
+            ball.style.left = '10px';
+            setTimeout(() => {
+                resultMessage.style.display = 'none';
+            }, 2000); // Hide result message after 2 seconds
+        }
+        
+        function updateBalance() {
+            balanceText.innerText = `Balance: Rs ${balance}`;
+        }
+
+        function displayResultMessage(winnings) {
+            resultMessage.style.display = 'block';
+            if (winnings < 0) {
+                resultMessage.classList.add('loss');
+                resultMessage.classList.remove('win');
+                resultMessage.innerText = `You lost Rs ${Math.abs(winnings)}`;
+            } else {
+                resultMessage.classList.add('win');
+                resultMessage.classList.remove('loss');
+                resultMessage.innerText = `You won Rs ${winnings}`;
+            }
+        }
+    </script>
+</body>
+</html>
