@@ -1,41 +1,196 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>ChiranjeeviKola</title>
-<meta name="description" content="Welcome to Chiranjeevikola's official website" />
-
-    <style>
-        body {
-            background-color: white;
-            height: 100%;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        h1 {
-            color: red;
-            font-size: 100px;
-            text-align: center;
-            animation: colorChange 2s infinite;
-        }
-
-        @keyframes colorChange {
-            0% { color: red; }
-            25% { color: blue; }
-            50% { color: green; }
-            75% { color: yellow; }
-            100% { color: red; }
-        }
-
-     
-    </style>
+  <meta charset="UTF-8">
+  <title>Simple Jump Game with Circle Player</title>
+  <style>
+    /* Reset and basic styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(to right, #ff7e5f, #feb47b); /* Gradient background */
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    
+    /* Game container with grey background */
+    .game-container {
+      position: relative;
+      width: 600px;
+      height: 200px;
+      border: 2px solid #fff;
+      background: grey; /* Grey background */
+      overflow: hidden;
+    }
+    
+    /* Score display style */
+    #score {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 20px;
+      z-index: 10;
+    }
+    
+    /* Game Over message */
+    #failed {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 40px;
+      color: red;
+      display: none;
+      z-index: 10;
+    }
+    
+    /* Player styling - now a circle */
+    .player {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      width: 20px;      /* Set equal width */
+      height: 20px;     /* Set equal height */
+      background-color: #0f0;
+      border-radius: 50%;  /* Makes it a circle */
+      transition: bottom 0.3s ease;
+    }
+    
+    /* Hidden checkbox used to trigger the jump */
+    #jump-toggle {
+      display: none;
+    }
+    
+    /* When the checkbox is checked, trigger the jump animation */
+    #jump-toggle:checked ~ .player {
+      animation: jump 0.5s ease;
+    }
+    
+    @keyframes jump {
+      0%   { bottom: 0; }
+      50%  { bottom: 100px; }
+      100% { bottom: 0; }
+    }
+    
+    /* Obstacle styling and animation */
+    .obstacle {
+      position: absolute;
+      bottom: 0;
+      right: -50px; /* Start off-screen */
+      width: 40px;
+      height: 40px;
+      background-color: #f00;
+      animation: moveObstacle 2s linear infinite;
+    }
+    
+    @keyframes moveObstacle {
+      0%   { right: -50px; }
+      100% { right: 650px; }
+    }
+    
+    /* Jump button styling */
+    .jump-button {
+      margin: 20px;
+      padding: 10px 20px;
+      background: #fff;
+      color: #222;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+  </style>
 </head>
 <body>
+  <!-- Score Display -->
+  <div id="score">Score: 0</div>
+  
+  <!-- Game Container -->
+  <div class="game-container">
+    <!-- Game Over Message Display -->
+    <div id="failed">Game Over!</div>
+    
+    <!-- Hidden checkbox to trigger jump animation -->
+    <input type="checkbox" id="jump-toggle">
+    
+    <!-- Player - now displayed as a circle -->
+    <div class="player"></div>
+    
+    <!-- Obstacle (red square) -->
+    <div class="obstacle"></div>
+  </div>
+  
+  <!-- Label acts as a jump button -->
+  <label for="jump-toggle" class="jump-button" onclick="setTimeout(function(){document.getElementById('jump-toggle').checked = false;}, 500);">
+    Jump!
+  </label>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const player = document.querySelector('.player');
+      const obstacle = document.querySelector('.obstacle');
+      const scoreDisplay = document.getElementById('score');
+      const failedDisplay = document.getElementById('failed');
 
+      let score = 0;
+      let gameInterval;
 
-<h1>Endhuku bro na bio check chesthav, chadhuvuko bro 👊
-</h1>
+      // Increase score each time the obstacle completes its animation cycle.
+      obstacle.addEventListener("animationiteration", () => {
+        score++;
+        scoreDisplay.textContent = "Score: " + score;
+      });
 
+      // Collision detection using axis-aligned bounding box (AABB)
+      function checkCollision() {
+        const playerRect = player.getBoundingClientRect();
+        const obstacleRect = obstacle.getBoundingClientRect();
+
+        if (
+          playerRect.right > obstacleRect.left &&
+          playerRect.left < obstacleRect.right &&
+          playerRect.bottom > obstacleRect.top &&
+          playerRect.top < obstacleRect.bottom
+        ) {
+          gameOver();
+        }
+      }
+
+      // Game over function: pause animation, show "Game Over!", and then restart the game.
+      function gameOver() {
+        clearInterval(gameInterval);
+        obstacle.style.animationPlayState = 'paused';
+        failedDisplay.style.display = 'block';
+
+        setTimeout(() => {
+          failedDisplay.style.display = 'none';
+          obstacle.style.animation = 'none';
+          void obstacle.offsetWidth;  // Force reflow to restart the animation
+          obstacle.style.animation = '';
+          obstacle.style.animationPlayState = 'running';
+
+          // Reset score
+          score = 0;
+          scoreDisplay.textContent = "Score: " + score;
+
+          // Restart collision detection loop
+          gameInterval = setInterval(checkCollision, 10);
+        }, 2000);
+      }
+
+      // Begin collision detection
+      gameInterval = setInterval(checkCollision, 10);
+    });
+  </script>
 </body>
 </html>
